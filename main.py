@@ -1,8 +1,6 @@
 import pandas as pd
 import pm4py
 from pm4py.objects.conversion.log import converter as log_converter
-from datetime import datetime
-
 
 def import_xes(file_path):
     log = pm4py.read_xes(file_path)
@@ -15,7 +13,6 @@ def get_label_encoder(log):
         for event_index,event in enumerate(case):
             activity_names.append(event['concept:name'])
     return  {name: idx+1 for idx, name in enumerate(sorted(set(activity_names), key=lambda x: activity_names.index(x)))}
-
 
 def print_all_log(log):
     for case_id, case in enumerate(log):
@@ -40,6 +37,21 @@ def encode_case_simple_index (case, prefix_length, label_encoder):
 
 # TODO count_concurrent_cases (case, log):
 def count_concurrent_cases (case, log):
+
+    # min = case[0]["time:timestamp"]
+    # max = case[0]["time:timestamp"]
+    # max_id = 0
+    # min_id = 0
+    # for idx, activity in enumerate(case):
+    #     if (activity["time:timestamp"] >= max):
+    #         max = activity["time:timestamp"]
+    #         max_id = idx
+    #     if (activity["time:timestamp"] < min):
+    #         min = activity["time:timestamp"]
+    #         min_id = idx
+    # print(max_id == (len(case) -1))
+    # print(max_id, " - ", min_id, len(case))
+
     start_timestamp = case[0]["time:timestamp"]
     end_timestamp = case[-1]["time:timestamp"]
     # print(start_timestamp, " - ", end_timestamp)
@@ -82,14 +94,40 @@ def count_avg_duration (case, log):
         # for event_id, event in enumerate(case):
         #     dur += int(event["activity_duration"])
         # print(time, " - ", dur)
-    return cumulative_time/len(intersecting_traces)
+    return round(cumulative_time/len(intersecting_traces))
 
 # TODO count_my_intercase_value: (dobbiamo scegliere una metrica)
+def count_avg_resources_concurrent_cases (case, log):
+    start_timestamp = case[0]["time:timestamp"]
+    end_timestamp = case[-1]["time:timestamp"]
+
+    intersecting_traces = pm4py.filter_time_range(
+        log,
+        start_timestamp,
+        end_timestamp,
+        mode='traces_intersecting',
+        case_id_key='concept:name',
+        timestamp_key='time:timestamp'
+    )
+
+    # resources = set()
+    # for event_id, event in enumerate(log[2]):
+    #     resources.add(event["Resource"])
+    # print("PLUTO: ", len(resources), resources)
+
+    cumulative_resources = 0
+    for case_id, case in enumerate(intersecting_traces):
+        resources = set()
+        for event_id, event in enumerate(case):
+            resources.add(event["Resource"])
+        cumulative_resources += len(resources)
+    return round(cumulative_resources/len(log), 2)
+
 # TODO simple_index_encode (log, prefix_length, label_encoder, conc_cases, avg_dur, my_int) come codifico i nuovi valori ottenuti dalle trasformazioni (potremmo aggiungerli al label_encoder):
 def simple_index_encode (log, prefix_length, label_encoder, conc_cases, avg_dur, my_int):
     encode_result = []
     for case_id, case in enumerate(log):
-        base_encode = encode_case_simple_index(case, 5, label_encoder)
+        base_encode = encode_case_simple_index(case, prefix_length, label_encoder)
 
         if (conc_cases):
             # Compute concurrent cases for all the traces
@@ -100,7 +138,8 @@ def simple_index_encode (log, prefix_length, label_encoder, conc_cases, avg_dur,
             n = round(count_avg_duration(case, log)/(3600*24), 2)
             base_encode.insert(-1, n)
         if (my_int):
-            print("my_int")
+            n = count_avg_resources_concurrent_cases(case, log)
+            base_encode.insert(-1, n)
 
         encode_result.append(base_encode)
     return pd.DataFrame(data=encode_result)
@@ -111,9 +150,11 @@ if __name__ == '__main__':
     # print(encode_case_simple_index(log[0], 5, label_encoder))
 
     # print(count_concurrent_cases(log[0], log))
+    # print(count_avg_duration(log[0], log), " sec")
     # print(round(count_avg_duration(log[0], log)/(3600*24), 2), " days")
+    # print(count_avg_resources_concurrent_cases(log[2], log))
 
-    print(simple_index_encode(log, 5, label_encoder, conc_cases=True, avg_dur=True, my_int=False))
+    print(simple_index_encode(log, 5, label_encoder, conc_cases=True, avg_dur=True, my_int=True))
 
     # print(log[0])
     # print_all_log({log[0]})
