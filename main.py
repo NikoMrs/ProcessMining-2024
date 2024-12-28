@@ -42,7 +42,7 @@ def encode_case_simple_index (case, prefix_length, label_encoder):
 def count_concurrent_cases (case, log):
     start_timestamp = case[0]["time:timestamp"]
     end_timestamp = case[-1]["time:timestamp"]
-    print(start_timestamp, " - ", end_timestamp)
+    # print(start_timestamp, " - ", end_timestamp)
     intersecting_traces = pm4py.filter_time_range(
         log,
         start_timestamp,
@@ -59,7 +59,7 @@ def count_concurrent_cases (case, log):
 def count_avg_duration (case, log):
     start_timestamp = case[0]["time:timestamp"]
     end_timestamp = case[-1]["time:timestamp"]
-    print(start_timestamp, " - ", end_timestamp)
+    # print(start_timestamp, " - ", end_timestamp)
     intersecting_traces = pm4py.filter_time_range(
         log,
         start_timestamp,
@@ -85,15 +85,35 @@ def count_avg_duration (case, log):
     return cumulative_time/len(intersecting_traces)
 
 # TODO count_my_intercase_value: (dobbiamo scegliere una metrica)
-# TODO simple_index_encode (log, prefix_length, label_encoder, conc_cases, avg_dur, my_int):
+# TODO simple_index_encode (log, prefix_length, label_encoder, conc_cases, avg_dur, my_int) come codifico i nuovi valori ottenuti dalle trasformazioni (potremmo aggiungerli al label_encoder):
+def simple_index_encode (log, prefix_length, label_encoder, conc_cases, avg_dur, my_int):
+    encode_result = []
+    for case_id, case in enumerate(log):
+        base_encode = encode_case_simple_index(case, 5, label_encoder)
+
+        if (conc_cases):
+            # Compute concurrent cases for all the traces
+            n = count_concurrent_cases(case, log)
+            base_encode.insert(-1, n)
+        if (avg_dur):
+            # Compute avg duration of concurrent traces
+            n = round(count_avg_duration(case, log)/(3600*24), 2)
+            base_encode.insert(-1, n)
+        if (my_int):
+            print("my_int")
+
+        encode_result.append(base_encode)
+    return pd.DataFrame(data=encode_result)
 
 if __name__ == '__main__':
     log = import_xes("./Production_avg_dur_training_0-80.xes")
     label_encoder = get_label_encoder(log)
     # print(encode_case_simple_index(log[0], 5, label_encoder))
 
-    print(count_concurrent_cases(log[0], log))
-    print(round(count_avg_duration(log[0], log)/(3600*24), 2), " days")
+    # print(count_concurrent_cases(log[0], log))
+    # print(round(count_avg_duration(log[0], log)/(3600*24), 2), " days")
+
+    print(simple_index_encode(log, 5, label_encoder, conc_cases=True, avg_dur=True, my_int=False))
 
     # print(log[0])
     # print_all_log({log[0]})
