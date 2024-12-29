@@ -3,6 +3,8 @@ from matplotlib import pyplot as plot
 from sklearn import tree
 from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, classification_report, confusion_matrix
 from sklearn.tree import DecisionTreeClassifier
+from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
+from sklearn.model_selection import cross_val_score
 
 from main import *
 
@@ -21,6 +23,33 @@ def print_metrics(predictions, gold_standard):
     print('recall=%f' % (recall_score(gold_standard.iloc[:, -1:], predictions, average='macro')))
     print('f-measure=%f' % (f1_score(gold_standard.iloc[:, -1:], predictions, average='macro')))
 
+def model_optimization(encoded_data:pd.DataFrame, max_evals=1000):
+
+    param_space = {
+        'max_depth': hp.choice('max_depth', range(1, 30)),
+        'max_features': hp.choice('max_features', range(1, 200)),
+        'min_samples_split': hp.choice('min_samples_split', range(2, 100)),
+        'min_samples_leaf': hp.choice('min_samples_leaf', range(1, 100)),
+        'max_leaf_nodes': hp.choice('max_leaf_nodes', range(2, 100)),
+        'criterion': hp.choice('criterion', ["gini", "entropy", "log_loss"])
+    }
+
+    def acc_model(params):
+        X_ = encoded_data.iloc[:, :-1]
+        y = encoded_data.iloc[:, -1:]
+        model = tree.DecisionTreeClassifier(**params)
+        return cross_val_score(model, X_, y, scoring='accuracy').mean()
+
+    def f(params):
+        acc = acc_model(params)
+        return {'loss': -acc, 'status': STATUS_OK}
+
+    trials = Trials()
+    best = fmin(f, param_space, algo=tpe.suggest, max_evals=max_evals, trials=trials)
+    print(best)
+    print(best['criterion'], best['criterion'])
+    return best, trials
+
 if __name__ == '__main__':
     PREFIX_LENGTH = 5
 
@@ -36,10 +65,11 @@ if __name__ == '__main__':
     # Define the decision tree with the preferred parameters
     model = DecisionTreeClassifier(
         criterion='gini',
-        # max_depth=4,
-        # min_samples_split=2,
-        # min_samples_leaf=1,
-        # max_features='sqrt',
+        # max_depth=9,
+        # max_features=110,
+        # min_samples_leaf=3,
+        # min_samples_split=4,
+        # max_leaf_nodes=47,
         # random_state=17493,
     )
 
@@ -58,4 +88,6 @@ if __name__ == '__main__':
     # Plot the decision tree created during the training process
     # tree.plot_tree(model, fontsize=8)
     # plot.show()
+
+    model_optimization(encoded_training_set, max_evals=50000)
 
