@@ -134,7 +134,12 @@ def count_avg_overlapping_duration_concurrent_cases(case, log):
             duration = pd.Timedelta(overlap_end - overlap_start).total_seconds()
             overlapping_durations.append(duration)
 
-    return round((sum(overlapping_durations) / len(overlapping_durations)), 2)
+    if (overlapping_durations):
+        retval = round((sum(overlapping_durations) / len(overlapping_durations)), 2)
+    else:
+        retval = 0
+
+    return retval
 
 
 # TODO simple_index_encode (log, prefix_length, label_encoder, conc_cases, avg_dur, my_int) come codifico i nuovi valori ottenuti dalle trasformazioni (potremmo aggiungerli al label_encoder):
@@ -179,5 +184,5 @@ if __name__ == '__main__':
     # print(round(count_avg_overlapping_duration_concurrent_cases(log[2], log)/(3600*24), 2), " days")
 
     # training_set = simple_index_encode(log, 5, label_encoder, conc_cases=True, avg_dur=True, my_int=True)
-    training_set = simple_index_encode(log, 5, label_encoder, conc_cases=False, avg_dur=True, my_int=True)
+    training_set = simple_index_encode(log, 5, label_encoder, conc_cases=False, avg_dur=True, my_int1=True)
     print(training_set)
