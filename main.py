@@ -2,6 +2,11 @@ import pandas as pd
 import pm4py
 from pm4py.objects.conversion.log import converter as log_converter
 
+from sklearn import tree
+from matplotlib import pyplot as plot
+from sklearn import tree
+# from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, classification_report, confusion_matrix
+
 def import_xes(file_path):
     log = pm4py.read_xes(file_path)
     log = log_converter.apply(log, variant=log_converter.Variants.TO_EVENT_LOG, parameters={})
@@ -20,7 +25,7 @@ def print_all_log(log):
         for event_id, event in enumerate(case):
             print(event_id, " ", event["concept:name"])
 
-# TODO encode_case_simple_index (case, prefix_length, label_encoder) aggiungere label linale con il risultato? protemmo usare -1 per lo Zero padding:
+# TODO encode_case_simple_index (case, prefix_length, label_encoder) se l'attivita' non e' nel mapping possiamo pensare di skippare:
 # Compute the Simple Index encoding and cut the encoding at a specific prefix_length,
 # if trace_length < prefix_length 0's are added
 def encode_case_simple_index (case, prefix_length, label_encoder):
@@ -144,9 +149,11 @@ def simple_index_encode (log, prefix_length, label_encoder, conc_cases, avg_dur,
         encode_result.append(base_encode)
     return pd.DataFrame(data=encode_result)
 
+
 if __name__ == '__main__':
     log = import_xes("./Production_avg_dur_training_0-80.xes")
     label_encoder = get_label_encoder(log)
+
     # print(encode_case_simple_index(log[0], 5, label_encoder))
 
     # print(count_concurrent_cases(log[0], log))
@@ -154,10 +161,8 @@ if __name__ == '__main__':
     # print(round(count_avg_duration(log[0], log)/(3600*24), 2), " days")
     # print(count_avg_resources_concurrent_cases(log[2], log))
 
-    print(simple_index_encode(log, 5, label_encoder, conc_cases=True, avg_dur=True, my_int=True))
+    # training_set = simple_index_encode(log, 5, label_encoder, conc_cases=True, avg_dur=True, my_int=True)
+    training_set = simple_index_encode(log, 5, label_encoder, conc_cases=False, avg_dur=True, my_int=True)
 
-    # print(log[0])
-    # print_all_log({log[0]})
 
-    # for case_id, case in enumerate(log):
-    #     print(encode_case_simple_index(case, 5, label_encoder))
+
