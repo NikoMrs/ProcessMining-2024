@@ -59,8 +59,14 @@ if __name__ == '__main__':
     # Compute the label_encoder looking at the activity of the training set
     label_encoder = get_label_encoder(training_set)
 
+    conc_cases = False
+    avg_dur = True
+    my_int1 = True
+    my_int2 = True
+
     # Perform the encoding af the training set
-    encoded_training_set = simple_index_encode(training_set, PREFIX_LENGTH, label_encoder, conc_cases=False, avg_dur=True, my_int=True)
+    encoded_training_set = simple_index_encode(training_set, PREFIX_LENGTH, label_encoder, conc_cases=conc_cases,
+                                               avg_dur=avg_dur, my_int1=my_int1, my_int2=my_int1)
 
     # Define the decision tree with the preferred parameters
     model = DecisionTreeClassifier(
@@ -77,7 +83,8 @@ if __name__ == '__main__':
     model = train_dt(model, encoded_training_set)
 
     # Perform the encoding af the test set
-    encoded_test_set = simple_index_encode(test_set, PREFIX_LENGTH, label_encoder, conc_cases=False, avg_dur=True, my_int=True)
+    encoded_test_set = simple_index_encode(test_set, PREFIX_LENGTH, label_encoder, conc_cases=conc_cases,
+                                           avg_dur=avg_dur, my_int1=my_int1, my_int2=my_int1)
 
     # Predict the outcome for the test set
     predictions = predict(model, encoded_test_set)
@@ -89,5 +96,4 @@ if __name__ == '__main__':
     # tree.plot_tree(model, fontsize=8)
     # plot.show()
 
-    model_optimization(encoded_training_set, max_evals=50000)
-
+    # model_optimization(encoded_training_set, max_evals=50000)
