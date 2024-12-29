@@ -141,10 +141,35 @@ def count_avg_overlapping_duration_concurrent_cases(case, log):
 
     return retval
 
+def count_avg_concurrent_cases_per_event(case, log):
+    concurrent_counts = []
+
+    for event in case:
+        event_start_timestamp = event["time:timestamp"]
+        event_end_timestamp = event_start_timestamp + pd.to_timedelta(event["activity_duration"], unit='s')
+
+        intersecting_traces = pm4py.filter_time_range(
+            log,
+            event_start_timestamp,
+            event_end_timestamp,
+            mode='traces_intersecting',
+            case_id_key='concept:name',
+            timestamp_key='time:timestamp'
+        )
+
+        concurrent_counts.append(len(intersecting_traces))
+
+    if (concurrent_counts):
+        retval = round((sum(concurrent_counts) / len(concurrent_counts)), 2)
+    else:
+        retval = 0
+
+    return retval
+
 
 # TODO simple_index_encode (log, prefix_length, label_encoder, conc_cases, avg_dur, my_int) come codifico i nuovi valori ottenuti dalle trasformazioni (potremmo aggiungerli al label_encoder):
 def simple_index_encode(log, prefix_length, label_encoder, conc_cases=False, avg_dur=False, my_int1=False,
-                        my_int2=False):
+                        my_int2=False, my_int3=False):
     encode_result = []
     for case_id, case in enumerate(log):
         base_encode = encode_case_simple_index(case, prefix_length, label_encoder)
@@ -165,6 +190,10 @@ def simple_index_encode(log, prefix_length, label_encoder, conc_cases=False, avg
             # Compute avg overlapping time duration of concurrent traces
             n = round(count_avg_overlapping_duration_concurrent_cases(case, log) / (3600 * 24), 2)
             base_encode.insert(-1, n)
+        if (my_int3):
+            # Compute avg number of overlapping traces for each event in a case
+            n = count_avg_concurrent_cases_per_event(case, log)
+            base_encode.insert(-1, n)
 
         encode_result.append(base_encode)
 
@@ -182,7 +211,8 @@ if __name__ == '__main__':
     # print(round(count_avg_duration(log[0], log)/(3600*24), 2), " days")
     # print(count_avg_resources_concurrent_cases(log[2], log))
     # print(round(count_avg_overlapping_duration_concurrent_cases(log[2], log)/(3600*24), 2), " days")
+    # print(count_concurrent_cases_per_event(log[0], log))
 
     # training_set = simple_index_encode(log, 5, label_encoder, conc_cases=True, avg_dur=True, my_int=True)
-    training_set = simple_index_encode(log, 5, label_encoder, conc_cases=False, avg_dur=True, my_int1=True)
+    training_set = simple_index_encode(log, 5, label_encoder, conc_cases=False, avg_dur=True, my_int3=True)
     print(training_set)
