@@ -6,7 +6,7 @@ from sklearn.tree import DecisionTreeClassifier
 from hyperopt import fmin, tpe, hp, STATUS_OK, Trials
 from sklearn.model_selection import cross_val_score
 
-from main import *
+from encoding import *
 
 
 def train_dt(model, encoded_data:pd.DataFrame):
