@@ -25,7 +25,6 @@ def print_all_log(log):
         for event_id, event in enumerate(case):
             print(event_id, " ", event["concept:name"])
 
-# TODO encode_case_simple_index (case, prefix_length, label_encoder) se l'attivita' non e' nel mapping possiamo pensare di skippare:
 # Function used to encode a trace using simple index encoding
 def encode_case_simple_index(case, prefix_length, label_encoder):
     encoded_case = []
@@ -35,12 +34,21 @@ def encode_case_simple_index(case, prefix_length, label_encoder):
 
     trace = (encoded_case[:prefix_length] + [0] * prefix_length)[:prefix_length]
     trace.append(case.attributes["label"])
+
     return trace
 
-# TODO decode_case_simple_index (forse)
+def decode_case_simple_index(encoded_case, prefix_length, label_encoder):
+    inverse_label_encoder = {v: k for k, v in label_encoder.items()}
+    decoded_case = []
+    for encoded_event in encoded_case:
+        if(encoded_event != 0 and encoded_event in inverse_label_encoder):
+            encoded_event_name = inverse_label_encoder[encoded_event]
+            decoded_case.append(encoded_event_name)
 
+    trace = decoded_case[:prefix_length]
 
-# TODO count_concurrent_cases (case, log):
+    return trace
+
 # Function used to compute the number of cases in the event log that were executed concurrently with the given trace
 def count_concurrent_cases(case, log):
     start_timestamp = case[0]["time:timestamp"]
@@ -57,7 +65,6 @@ def count_concurrent_cases(case, log):
 
     return len(intersecting_traces)
 
-# TODO count_avg_duration (case, log):
 # Function used to compute the average duration of the cases in the event log that were exectued concurrently with the given trace
 def count_avg_duration(case, log):
     start_timestamp = case[0]["time:timestamp"]
@@ -77,14 +84,9 @@ def count_avg_duration(case, log):
     for case_id, case in enumerate(intersecting_traces):
         time = (pd.Timedelta(case[-1]["time:timestamp"] - case[0]["time:timestamp"])).total_seconds()
         cumulative_time += time
-        # TODO se la traccia ha una sola attività allora possiamo guardare la durata della singola attività, il problema è che non so in che unita' di misura è espressa
-        # dur = 0
-        # for event_id, event in enumerate(case):
-        #     dur += int(event["activity_duration"])
-        # print(time, " - ", dur)
+        # If the case has only one event, the time will be 0
     return round(cumulative_time / len(intersecting_traces))
 
-# TODO count_my_intercase_value: (dobbiamo scegliere una metrica)
 # Function used to compute the average amount of unique resources involved in the cases that were executed concurrently with the given trace
 def count_avg_resources_concurrent_cases(case, log):
     start_timestamp = case[0]["time:timestamp"]
@@ -167,7 +169,6 @@ def count_avg_concurrent_cases_per_event(case, log):
 
     return retval
 
-# TODO simple_index_encode (log, prefix_length, label_encoder, conc_cases, avg_dur, my_int) come codifico i nuovi valori ottenuti dalle trasformazioni (potremmo aggiungerli al label_encoder):
 # Function used to encode the given log using Simple index encoding, with optional intercase features
 def simple_index_encode(log, prefix_length, label_encoder, conc_cases=False, avg_dur=False, my_int1=False,
                         my_int2=False, my_int3=False):
@@ -206,6 +207,8 @@ if __name__ == '__main__':
     label_encoder = get_label_encoder(log)
 
     # print(encode_case_simple_index(log[0], 5, label_encoder))
+    # a = encode_case_simple_index(log[0], 5, label_encoder)
+    # print(decode_case_simple_index(a, 5, label_encoder))
 
     # print(count_concurrent_cases(log[0], log))
     # print(count_avg_duration(log[0], log), " sec")
@@ -215,5 +218,5 @@ if __name__ == '__main__':
     # print(count_concurrent_cases_per_event(log[0], log))
 
     # training_set = simple_index_encode(log, 5, label_encoder, conc_cases=True, avg_dur=True, my_int=True)
-    training_set = simple_index_encode(log, 5, label_encoder, conc_cases=False, avg_dur=True, my_int3=True)
-    print(training_set)
+    # training_set = simple_index_encode(log, 5, label_encoder, conc_cases=False, avg_dur=True, my_int3=True)
+    # print(training_set)
